@@ -1,0 +1,181 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Sep 14 14:52:28 2017
+
+@author: trandhawa
+"""
+
+import numpy as np
+import csv
+from scipy import stats
+import matplotlib.pyplot as plt
+from calibration_fxns import cal_interp, finish_array, adjust_load, delt_torque, calc_delt
+
+#Define the filepath and names to be analyzed
+type_ = '50009900'
+pref_ = '000'
+sn_ = '3'
+
+
+#file_prefix = 'C:/Users/Owner/My SecuriSync/trandhawa (mss01-nasusers)/spyder/Torque_Testbench/'
+#file_prefix = 'U:/spyder/Torque_Testbench/'
+file_prefix = 'U:/Torque_Calibration/' + type_ + '_' + pref_ + sn_ + '_BLK2/'
+#file_prefix = 'U:/Torque_Calibration/'
+#file_n = 'run 0 min.csv'
+#torque_n = 'loaded_0_min.csv'
+
+
+file_n = 'unloaded_' + type_ + '_' + sn_ + '_BLK2.csv'
+torque_n = 'highload_' + type_ + '_' + sn_ + '_BLK2.csv'
+
+file_ = file_prefix + file_n
+torque_f = file_prefix + torque_n
+
+#Parse the calibration run output
+#store Input and Output lists
+with open(file_) as csvfile:
+    reader = csv.DictReader(csvfile)
+    data_input = []
+    data_output = []
+    for row in reader:
+        data_input.append(row['Input'])
+        data_output.append(row['Output'])
+
+#Convert csv values to int 4890
+data_input = np.asarray(data_input[0:], dtype=np.float32)
+data_output = np.asarray(data_output[0:], dtype=np.float32)
+
+data_input = data_input.astype(np.int)
+data_output = data_output.astype(np.int)
+
+#Calculate and store the post-processed data, calibration
+#data and interpolation function used to generate a
+#calibration curve.
+sorted_, cal_curve, int_fxn, direction_ = calc_delt(data_input, data_output)
+
+#Plot the post-processed nominal error curve
+plt.figure(1)
+plt.plot(sorted_[:,0], sorted_[:,1], 'b1')
+plt.show()
+
+
+
+#Plot the calibration curve
+plt.figure(2)
+plt.plot(cal_curve[:,0], cal_curve[:,1], 'b1')
+plt.show()
+
+
+#Open and write to a .csv file that will store the
+#calibration curve
+with open('calib_123.csv', 'w') as csvfile:
+    writer_ = csv.writer(csvfile, delimiter=',', lineterminator = '\n')
+    writer_.writerow(['Pos', 'Delta'])
+    for i in range(cal_curve[:,0].size):
+        pos_ = int(cal_curve[i,0])
+        delt_ = float(cal_curve[i,1])
+        writer_.writerow([pos_, delt_])
+
+#Use the calibration curve to flatten the nominal error
+#curve and view the error 'band'
+cal_flat = sorted_[:,1] - int_fxn(sorted_[:,0])
+
+#Plot the flattened error curve
+plt.figure(3)
+plt.plot(sorted_[:,0], cal_flat, 'b1')
+plt.show()
+
+
+
+#Calculate the amplitude of the nominal error curve
+nominal_amp = np.max(sorted_[:,1]) - np.min(sorted_[:,1])
+
+#Calculate the standard deviation about the nominal error
+#curve
+nominal_std = np.std(cal_flat)
+
+#Calculate the average 'band' width of the nominal error
+nominal_avg = np.average(cal_flat)
+
+#Import loaded run data
+with open(torque_f) as csvfile:
+    reader = csv.DictReader(csvfile)
+    t_input = []
+    t_output = []
+    t_torque = []
+    t_current = []
+    for row in reader:
+        t_input.append(row['Input'])
+        t_output.append(row['Output'])
+        t_torque.append(row['Torque'])
+        t_current.append(row['Current'])
+
+#Convert data from strings to int
+t_input = np.asarray(t_input, dtype=np.float32)
+t_output = np.asarray(t_output, dtype=np.float32)
+t_torque = np.asarray(t_torque, dtype=np.float32)
+t_current = np.asarray(t_current, dtype=np.float32)
+
+t_input = t_input.astype(np.int)
+t_output = t_output.astype(np.int)
+t_torque = t_torque.astype(np.int)
+t_current = t_current.astype(np.int)
+
+#Post-process the loaded run for the raw delta curve
+sorted_t, cal_t, intfxn_t, d_ = calc_delt(t_input, t_output)
+
+#Calculate the loaded delta using the calibration curve
+#tvsdelta is returned from the delt_torque function as a 
+#3 column array with delta, torque and output_pos in columns
+#0, 1 and 2, respectively
+tvsdelta = delt_torque(t_input, t_output, t_torque, cal_curve)
+
+#Calculate the average output counts/Nm
+cntvst, _intc, _r_v, _p_v, _stdrr = stats.linregress(tvsdelta[:,0], tvsdelta[:,1])
+
+#Plot the un-calibrated loaded error wave
+plt.figure(3)
+plt.plot(sorted_t[:,0], sorted_t[:,1], 'b1')
+plt.show()
+
+#Plot the calibrated loaded wave
+plt.figure(4)
+plt.plot(cal_t[:,0], cal_t[:,1], 'b1')
+plt.show()
+
+#Flatten the loaded wave
+flat_t = adjust_load(wave = sorted_t, calibration_wave = cal_curve)
+
+#Plot the flattened wave output vs delta
+plt.figure(5)
+plt.plot(flat_t[:,0], flat_t[:,1], 'b1')
+plt.show()
+
+#Plot delta vs torque
+plt.figure(6)
+plt.plot(tvsdelta[:,0], tvsdelta[:,1], 'b1')
+plt.show()
+
+fig, f_ax = plt.subplots()
+#    f_ax.plot(l_[:,0], l_[:,1], 'r1')
+f_ax.plot(tvsdelta[:,1], tvsdelta[:,0], 'b1')
+f_ax.set_xlabel('Torque')
+f_ax.set_ylabel('Delta', color = 'b')
+f_ax.tick_params('y', colors='b')
+
+#t_ax = f_ax.twinx()
+#t_ax.plot(position_, torque_, 'r2')
+#t_ax.set_ylabel('Torque (Nm)', color='r')
+#t_ax.tick_params('y', colors='r')
+
+fig.tight_layout()    
+plt.show()
+
+#Plot output vs delta
+plt.figure(7)
+plt.plot(tvsdelta[:,2], tvsdelta[:,0], 'b1')
+plt.show()
+#
+#plt.figure(8)
+#plt.plot(t_output, t_current, 'b1')
+#plt.show()
