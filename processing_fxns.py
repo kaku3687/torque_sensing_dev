@@ -57,50 +57,26 @@ def calibration_wave(wave, *filepath, width = w, scale_factor = sf, sigma = sig)
 def adjust_load(wave, *filepath, calibration_wave, width = w, sigma = sig):
     #if filepath is None:
     loaded_wave = wave
-    print (calibration_wave[:,0])
-#    elif wave is None:
+    c_wave = calibration_wave
+
+    #    elif wave is None:
 #        loaded_wave = np.genfromtxt(filepath, delimiter=',', skip_header=True)
 #    else:
 #        print ('ERROR: No data set given')
 #        return
   
     #loaded_wave = np.absolute(loaded_wave)
-    width = calibration_wave[:, 0].size
+    c = c_wave[:, 0].size
     p = loaded_wave[:,0].size
     load_adjusted= np.zeros((p,2))
 
-    for i in range(1, p):
-        load_adjusted[i-1,0] = loaded_wave[i-1,0]
-        for j in range(1, width):
-            if (calibration_wave[j-1,0] <= loaded_wave[i-1,0] <= calibration_wave[j,0]):
-                print ('True')
-                load_adjusted[i-1, 1] = 0
-               
-                #if abs(loaded_wave[i-1,1]) <= (abs(calibration_wave[j-1,1]) + fact_*sigma*calibration_wave[j-1,2]):
-                    
-#                load_adjusted[i-1,1] = loaded_wave[i-1,1] - calibration_wave[j-1,1]
-
-                #if True:
-                #break
-                    
-            else:
-                print ('False')
-                load_adjusted[i-1,1] = loaded_wave[i-1,1] - calibration_wave[j-1,1]
-#                if loaded_wave[i-1,1] >= 0:
-#                    if loaded_wave[i-1,1] < calibration_wave[j, 1]:
-#                        diff = 1*calibration_wave[j, 1] - fact_*sigma*calibration_wave[j, 2]
-#                    elif loaded_wave[i-1,1] > calibration_wave[j, 1]:
-#                        diff = 1*calibration_wave[j, 1] + fact_*sigma*calibration_wave[j, 2]
-#                elif loaded_wave[i-1,1] < 0:
-#                    if loaded_wave[i-1,1] < calibration_wave[j, 1]:
-#                        diff = 1*calibration_wave[j, 1] - fact_*sigma*calibration_wave[j, 2]
-#                    elif loaded_wave[i-1,1] > calibration_wave[j, 1]:
-#                        diff = 1*calibration_wave[j, 1] + fact_*sigma*calibration_wave[j, 2]
-#                load_adjusted[i-1,1] = loaded_wave[i-1,1] - diff
-                #break
-
- 
-                #print(load_adjusted[i-1,1])
+    for i in range(0,p):
+        load_adjusted[i,0] = loaded_wave[i,0]
+        
+        for j in range(0,c):
+            if c_wave[j, 0] == loaded_wave[i, 0]:
+                load_adjusted[i,1] = loaded_wave[i,1] - c_wave[j,1]
+                            
     return load_adjusted
 
 def smooth(x,window_len=100,window='hanning'):

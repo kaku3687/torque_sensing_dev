@@ -54,7 +54,6 @@ cal_wave = calibration_wave(wave = raw_wave, width = w_, sigma = sig_)
 new_wave = adjust_load(wave = raw_wave, calibration_wave = cal_wave, width = w_, sigma = sig_)
 
 plt.figure(2)
-plt.plot(cal_wave[:,0], cal_wave[:,1], 'b1')
 plt.plot(new_wave[:,0], new_wave[:,1], 'r1')
 
 #initialize position (pos) and delta (load_sin) arrays

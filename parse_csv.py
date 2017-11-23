@@ -13,8 +13,8 @@ from calibration_fxns import cal_interp, finish_array, adjust_load, delt_torque,
 
 #Define the filepath and names to be analyzed
 type_ = '50009900'
-pref_ = '000'
-sn_ = '3'
+pref_ = '00'
+sn_ = '13'
 
 
 #file_prefix = 'C:/Users/Owner/My SecuriSync/trandhawa (mss01-nasusers)/spyder/Torque_Testbench/'
@@ -26,7 +26,7 @@ file_prefix = 'U:/Torque_Calibration/' + type_ + '_' + pref_ + sn_ + '_BLK2/'
 
 
 file_n = 'unloaded_' + type_ + '_' + sn_ + '_BLK2.csv'
-torque_n = 'highload_' + type_ + '_' + sn_ + '_BLK2.csv'
+torque_n = 'loaded_' + type_ + '_' + sn_ + '_BLK2.csv'
 
 file_ = file_prefix + file_n
 torque_f = file_prefix + torque_n

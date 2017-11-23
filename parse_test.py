@@ -9,29 +9,104 @@ import numpy as np
 import csv
 from scipy import stats
 import matplotlib.pyplot as plt
-from calibration_fxns import cal_interp, finish_array, adjust_load, delt_torque, calc_delt, parse_csv
+from calibration_fxns import cal_interp, finish_array, adjust_load, delt_torque, calc_delt, parse_csv, moving_avg
 
 #Define the filepath and names to be analyzed
 type_ = '50009900'
-pref_ = '00'
-sn_ = '13'
+sn_ = '7'
 
 
-file_prefix = 'C:/Users/Owner/My SecuriSync/spyder/Torque_Testbench/'
-#file_prefix = 'U:/spyder/Torque_Testbench/'
+#file_prefix = 'C:/Users/Owner/My SecuriSync/Torque_Testbench/'
+file_prefix = 'U:/spyder/Torque_Testbench/'
 #file_prefix = 'U:/Torque_Calibration/' + type_ + '_' + pref_ + sn_ + '_BLK2/'
 #file_prefix = 'U:/Torque_Calibration/'
 #file_n = 'run 0 min.csv'
 #torque_n = 'loaded_0_min.csv'
 
-
-file_n = type_ + '_' + pref_ + sn_ + '_unloaded.csv'
+file_n = 'unloaded_' + type_ + '_' + sn_ + '_BLK2.csv'
+file_t = 'highload_' + type_ + '_' + sn_ + '_BLK2.csv'
 
 file_ = file_prefix + file_n
-#torque_f = file_prefix + torque_n
+torque_f = file_prefix +file_t
 
+####UNLOADED DATA####
 #Parse the calibration run output
 #store Input and Output lists
-signals_ = ['Input', 'Output']
+with open(file_) as csvfile:
+    reader = csv.DictReader(csvfile)
+    data_input = []
+    data_output = []
+    for row in reader:
+        data_input.append(row['Input'])
+        data_output.append(row['Output'])
 
-data_ = parse_csv(file_n, signals_)
+#Convert csv values to int 4890
+data_input = np.asarray(data_input[0:], dtype=np.float32)
+data_output = np.asarray(data_output[0:], dtype=np.float32)
+
+data_input = data_input.astype(np.int)
+data_output = data_output.astype(np.int)
+
+#Calculate and store the post-processed data, calibration
+#data and interpolation function used to generate a
+#calibration curve.
+sorted_, cal_curve, int_fxn, direction_ = calc_delt(data_input, data_output)
+
+
+####LOADED DATA####
+#Import loaded run data
+with open(torque_f) as csvfile:
+    reader = csv.DictReader(csvfile)
+    t_input = []
+    t_output = []
+    t_torque = []
+    t_current = []
+    for row in reader:
+        t_input.append(row['Input'])
+        t_output.append(row['Output'])
+        t_torque.append(row['Torque'])
+        
+#Convert data from strings to int
+t_input = np.asarray(t_input, dtype=np.float32)
+t_output = np.asarray(t_output, dtype=np.float32)
+t_torque = np.asarray(t_torque, dtype=np.float32)
+
+t_input = t_input.astype(np.int)
+t_output = t_output.astype(np.int)
+t_torque = t_torque.astype(np.int)
+
+#Post-process the loaded run for the raw delta curve
+sorted_t, cal_t, intfxn_t, d_ = calc_delt(t_input, t_output)
+
+#Calculate the loaded delta using the calibration curve
+#tvsdelta is returned from the delt_torque function as a 
+#3 column array with delta, torque and output_pos in columns
+#0, 1 and 2, respectively
+tvsdelta = delt_torque(t_input, t_output, t_torque, cal_curve)
+
+tvsdelta = moving_avg(tvsdelta)
+
+td_cal = np.vstack((tvsdelta[:,0], tvsdelta[:,1])).T
+
+#t_, t_itp = cal_interp(td_cal, start_ = -511, rev_cnt_ = 512)
+t_, t_itp = cal_interp(td_cal, start_ = np.min(tvsdelta[:,0]), rev_cnt_ = np.max(tvsdelta[:,0]))
+
+#Open and write to a .csv file that will store the
+#calibration curve
+#Open and write to a .csv file that will store the
+#calibration curve
+with open('pos_delt_cal.csv', 'w') as csvfile:
+    writer_ = csv.writer(csvfile, delimiter=',', lineterminator = '\n')
+    writer_.writerow(['Pos_Hex', 'Delta_Hex'])
+    for i in range(cal_curve[:,0].size):
+        pos_ = int(cal_curve[i,0])
+        delt_ = int(cal_curve[i,1])
+        writer_.writerow(['{0:04X}'.format(pos_), '{0:04X}'.format(delt_)])
+
+with open('delt_torque_cal.csv', 'w') as csvfile:
+    writer_ = csv.writer(csvfile, delimiter=',', lineterminator = '\n')
+    writer_.writerow(['AdjDelt_Hex', 'Torque_Hex'])
+    for i in range(t_[:,0].size):
+        adelt_ = int(t_[i,0])
+        torq_ = int(t_[i,1])
+        writer_.writerow(['{0:04X}'.format(adelt_), '{0:04X}'.format(torq_)])

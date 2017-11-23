@@ -54,7 +54,7 @@ def reject_outliers(data, m = 2):
     return data[abs(data-np.mean(data)) < m*np.std(data)]
 
 #FUNCTION to create interpolation function for curve
-def cal_interp(cal, rev_cnt_ = 524288):
+def cal_interp(cal, start_ = 0, rev_cnt_ = 524288):
      
     #remove repeating values from curve
     cal_curve = remove_repeat(cal)
@@ -66,7 +66,7 @@ def cal_interp(cal, rev_cnt_ = 524288):
     f_itp = interp1d(cal_curve[:,0], cal_curve[:,1], kind='cubic')
     
     #create x-array for 1 full rev wrt input encoder values
-    fx_ = np.arange(0,rev_cnt_,1)
+    fx_ = np.arange(start_,rev_cnt_,1)
     
     #generate y-array using x-array and interpolation function
     fy_ = f_itp(fx_)
@@ -200,6 +200,8 @@ def calc_delt(input_, output_):
     input_ = input_*(conv_fact_)*dir_
 
     delta_ = output_ - input_
+    
+    delta_ = delta_[0] - delta_
 
     #out_min = np.min(data_output)
     #data_output = data_output - out_min
@@ -250,6 +252,9 @@ def delt_torque(input_, output_, torque_, cal_):
     input_ = input_*(conv_fact_)*dir_
 
     delta_ = output_ - input_
+    
+    delta_ = delta_[0] - delta_
+    
     data_mod = np.mod(output_, abs_res)
     #out_min = np.min(data_output)
     #data_output = data_output - out_min
