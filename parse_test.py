@@ -11,6 +11,23 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from calibration_fxns import cal_interp, finish_array, adjust_load, delt_torque, calc_delt, parse_csv, moving_avg
 
+def calc_address():
+
+    return
+
+def conv_data():
+    return
+
+def calc_databytes():
+    return
+
+def calc_checksum(bb, aa, dd):
+    check_ = bb + aa + dd
+    check_ = check_ ^ 0xff
+    check_ = check_ + 1
+
+    return check_
+
 #Define the filepath and names to be analyzed
 type_ = '50009900'
 sn_ = '7'
@@ -110,3 +127,43 @@ with open('delt_torque_cal.csv', 'w') as csvfile:
         adelt_ = int(t_[i,0])
         torq_ = int(t_[i,1])
         writer_.writerow(['{0:04X}'.format(adelt_), '{0:04X}'.format(torq_)])
+
+
+cal_hex = "test.hex"
+cal_file = open(cal_hex, "w")
+
+for i in range(len(cal_curve[:,0])):
+    bb_ = 0x01
+    tt_ = 0x00
+
+    #Write msb line to file
+    a_msb = int(cal_curve[i,0])*2
+    dd_msb = int(cal_curve[i,1]) >> 8 
+    cc_msb = calc_checksum(bb_, a_msb, dd_msb)
+    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_msb) + '{0:02X}'.format(tt_) + '{0:04X}'.format(dd_msb) + '{0:02X}'.format(cc_msb) + '\n')
+
+    #Write lsb line to file
+    a_lsb = int(cal_curve[i,0]*2) + 1
+    dd_lsb =  int(cal_curve[i,1]) & 0xff
+    cc_lsb = calc_checksum(bb_, a_lsb, dd_lsb)
+    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_lsb) + '{0:02X}'.format(tt_) + '{0:04X}'.format(dd_lsb) + '{0:02X}'.format(cc_lsb) + '\n')
+
+
+cal_file.write(":00000001FF")
+cal_file.close()
+
+#BBAAAATT[DDDD]CC
+
+#BB Number of data bytes on line
+
+
+#AAAA Address in bytes
+
+
+#TT Data Type
+
+
+#DD Data bytes
+
+
+#CC Checksum
