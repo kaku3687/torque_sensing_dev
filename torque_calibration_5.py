@@ -320,7 +320,7 @@ if __name__ == "__main__":
 	#motor settings
 	mtr_set_ = mtr_settings()
 	mtr_set_.mtr_sp = 125000
-	mtr_set_.stop_pos = -5000000
+	mtr_set_.stop_pos = 5000000
 
 
 	# update_sampling()

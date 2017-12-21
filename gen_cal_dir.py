@@ -20,7 +20,7 @@ for k in range(len(act_prof[0])):
 		file_name = dir_name + "/" + "README_" + act_prof[0][k] + "_00" + str(i) + ".txt"
 
 		rdme_f = open(file_name, "w")
-		rdme_f.write(file_name)
+		rdme_f.write(act_prof[0][k] + "_00" + str(i))
 		rdme_f.write("\n")
 		rdme_f.write("Calibrated On:")
 		rdme_f.write("\n")

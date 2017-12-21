@@ -14,19 +14,13 @@ from calibration_fxns import cal_interp, finish_array, adjust_load, delt_torque,
 #Define the filepath and names to be analyzed
 type_ = '50009900'
 pref_ = '00'
-sn_ = '13'
+sn_ = '18'
 
-
-#file_prefix = 'C:/Users/Owner/My SecuriSync/trandhawa (mss01-nasusers)/spyder/Torque_Testbench/'
-#file_prefix = 'U:/spyder/Torque_Testbench/'
-file_prefix = 'U:/Torque_Calibration/' + type_ + '_' + pref_ + sn_ + '_BLK2/'
-#file_prefix = 'U:/Torque_Calibration/'
-#file_n = 'run 0 min.csv'
-#torque_n = 'loaded_0_min.csv'
-
+#file_prefix = 'P:/Motiv/1030_Robotics_Development_IRAD/02_Engineering/IRAD Actuator/Actuators Checkout/Robomantis_Actuator_Checkout/50009900 0023 troubleshoot/'
+file_prefix = 'P:/Motiv/1030_Robotics_Development_IRAD/02_Engineering/IRAD Actuator/Actuators Checkout/Robomantis_Actuator_Checkout/' + type_ + '_' + pref_ + sn_ + '_BLK2/'
 
 file_n = 'unloaded_' + type_ + '_' + sn_ + '_BLK2.csv'
-torque_n = 'loaded_' + type_ + '_' + sn_ + '_BLK2.csv'
+torque_n = 'highload_' + type_ + '_' + sn_ + '_BLK2.csv'
 
 file_ = file_prefix + file_n
 torque_f = file_prefix + torque_n
@@ -85,8 +79,6 @@ plt.figure(3)
 plt.plot(sorted_[:,0], cal_flat, 'b1')
 plt.show()
 
-
-
 #Calculate the amplitude of the nominal error curve
 nominal_amp = np.max(sorted_[:,1]) - np.min(sorted_[:,1])
 
@@ -133,28 +125,8 @@ tvsdelta = delt_torque(t_input, t_output, t_torque, cal_curve)
 #Calculate the average output counts/Nm
 cntvst, _intc, _r_v, _p_v, _stdrr = stats.linregress(tvsdelta[:,0], tvsdelta[:,1])
 
-#Plot the un-calibrated loaded error wave
-plt.figure(3)
-plt.plot(sorted_t[:,0], sorted_t[:,1], 'b1')
-plt.show()
-
-#Plot the calibrated loaded wave
-plt.figure(4)
-plt.plot(cal_t[:,0], cal_t[:,1], 'b1')
-plt.show()
-
 #Flatten the loaded wave
 flat_t = adjust_load(wave = sorted_t, calibration_wave = cal_curve)
-
-#Plot the flattened wave output vs delta
-plt.figure(5)
-plt.plot(flat_t[:,0], flat_t[:,1], 'b1')
-plt.show()
-
-#Plot delta vs torque
-plt.figure(6)
-plt.plot(tvsdelta[:,0], tvsdelta[:,1], 'b1')
-plt.show()
 
 fig, f_ax = plt.subplots()
 #    f_ax.plot(l_[:,0], l_[:,1], 'r1')
@@ -163,19 +135,5 @@ f_ax.set_xlabel('Torque')
 f_ax.set_ylabel('Delta', color = 'b')
 f_ax.tick_params('y', colors='b')
 
-#t_ax = f_ax.twinx()
-#t_ax.plot(position_, torque_, 'r2')
-#t_ax.set_ylabel('Torque (Nm)', color='r')
-#t_ax.tick_params('y', colors='r')
-
 fig.tight_layout()    
 plt.show()
-
-#Plot output vs delta
-plt.figure(7)
-plt.plot(tvsdelta[:,2], tvsdelta[:,0], 'b1')
-plt.show()
-#
-#plt.figure(8)
-#plt.plot(t_output, t_current, 'b1')
-#plt.show()
