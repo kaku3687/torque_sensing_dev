@@ -25,6 +25,7 @@ def calc_checksum(bb, aa, dd):
     check_ = bb + aa + dd
     check_ = check_ ^ 0xff
     check_ = check_ + 1
+    check_ = check_ & 0xff
 
     return check_
 
@@ -132,21 +133,37 @@ with open('delt_torque_cal.csv', 'w') as csvfile:
 cal_hex = "test.hex"
 cal_file = open(cal_hex, "w")
 
-for i in range(len(cal_curve[:,0])):
-    bb_ = 0x01
-    tt_ = 0x00
+a_msb = []
+a_lsb = []
+dd_msb = []
+dd_lsb = []
 
+bb_ = 0x01
+tt_ = 0x00
+block_ = 0x0000
+block_tt = 0x02
+
+for i in range(len(cal_curve[:100000,0])):
+  
+    a_msb.append(((int(cal_curve[i,0])*2) & 0xff) >> 8)
+    
+    if ((cal_curve[i,0])%0xFFFF)==0:
+        cc_msb = calc_checksum(bb_, 0, block_)
+        cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(0) + '{0:02X}'.format(block_tt) + '{0:X}'.format(block_).zfill(4) + '{0:02X}'.format(cc_msb) + '\n')
+        block_ = block_ + 16**3
+    
     #Write msb line to file
-    a_msb = int(cal_curve[i,0])*2
-    dd_msb = int(cal_curve[i,1]) >> 8 
-    cc_msb = calc_checksum(bb_, a_msb, dd_msb)
-    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_msb) + '{0:02X}'.format(tt_) + '{0:04X}'.format(dd_msb) + '{0:02X}'.format(cc_msb) + '\n')
+  
+    dd_msb.append(int(cal_curve[i,1]) >> 8)
+    cc_msb = calc_checksum(bb_, a_msb[-1], dd_msb[-1])
+       
+    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_msb[-1]) + '{0:02X}'.format(tt_) + '{0:X}'.format(dd_msb[-1]).zfill(4) + '{0:02X}'.format(cc_msb) + '\n')
 
     #Write lsb line to file
-    a_lsb = int(cal_curve[i,0]*2) + 1
-    dd_lsb =  int(cal_curve[i,1]) & 0xff
-    cc_lsb = calc_checksum(bb_, a_lsb, dd_lsb)
-    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_lsb) + '{0:02X}'.format(tt_) + '{0:04X}'.format(dd_lsb) + '{0:02X}'.format(cc_lsb) + '\n')
+    a_lsb.append((int(cal_curve[i,0]*2) + 1) & 0xff)
+    dd_lsb.append(int(cal_curve[i,1]) & 0xff)
+    cc_lsb = calc_checksum(bb_, a_lsb[-1], dd_lsb[-1])
+    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_lsb[-1]) + '{0:02X}'.format(tt_) + '{0:X}'.format(dd_lsb[-1]).zfill(4) + '{0:02X}'.format(cc_lsb) + '\n')
 
 
 cal_file.write(":00000001FF")
