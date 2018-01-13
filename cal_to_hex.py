@@ -133,37 +133,29 @@ with open('delt_torque_cal.csv', 'w') as csvfile:
 cal_hex = "test.hex"
 cal_file = open(cal_hex, "w")
 
-a_msb = []
-a_lsb = []
-dd_msb = []
-dd_lsb = []
+address_ = [] #Address array
+data_ = [] #Data array
+bb_ = 0x02 #Number of bytes in line
+tt_ = 0x00 #Line entry type -- data
+block_ = 0x0000 #Extended address block -- initialized to 0
+block_tt = 0x02 #Line entry type -- extended address
+addr_offset = 0x0000
 
-bb_ = 0x01
-tt_ = 0x00
-block_ = 0x0000
-block_tt = 0x02
-
-for i in range(len(cal_curve[:100000,0])):
+for i in range(len(cal_curve[:,0])):
   
-    a_msb.append(((int(cal_curve[i,0])*2) & 0xff) >> 8)
+    address_.append((int(cal_curve[i,0]) & 0xffff) + addr_offset)
     
+    #Check if address is multiple of FFFF block and add extended address line as needed
     if ((cal_curve[i,0])%0xFFFF)==0:
-        cc_msb = calc_checksum(bb_, 0, block_)
-        cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(0) + '{0:02X}'.format(block_tt) + '{0:X}'.format(block_).zfill(4) + '{0:02X}'.format(cc_msb) + '\n')
+        cc_ = calc_checksum(bb_, 0, block_)
+        cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(0) + '{0:02X}'.format(block_tt) + '{0:X}'.format(block_).zfill(4) + '{0:02X}'.format(cc_) + '\n')
         block_ = block_ + 16**3
     
-    #Write msb line to file
-  
-    dd_msb.append(int(cal_curve[i,1]) >> 8)
-    cc_msb = calc_checksum(bb_, a_msb[-1], dd_msb[-1])
+    #Calculate checksum and write line to hex file
+    data_.append(int(cal_curve[i,1]))
+    cc_ = calc_checksum(bb_, address_[-1], data_[-1])
        
-    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_msb[-1]) + '{0:02X}'.format(tt_) + '{0:X}'.format(dd_msb[-1]).zfill(4) + '{0:02X}'.format(cc_msb) + '\n')
-
-    #Write lsb line to file
-    a_lsb.append((int(cal_curve[i,0]*2) + 1) & 0xff)
-    dd_lsb.append(int(cal_curve[i,1]) & 0xff)
-    cc_lsb = calc_checksum(bb_, a_lsb[-1], dd_lsb[-1])
-    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(a_lsb[-1]) + '{0:02X}'.format(tt_) + '{0:X}'.format(dd_lsb[-1]).zfill(4) + '{0:02X}'.format(cc_lsb) + '\n')
+    cal_file.write(':' + '{0:02X}'.format(bb_) + '{0:04X}'.format(address_[-1]) + '{0:02X}'.format(tt_) + '{0:X}'.format(data_[-1]).zfill(4) + '{0:02X}'.format(cc_) + '\n')
 
 
 cal_file.write(":00000001FF")
